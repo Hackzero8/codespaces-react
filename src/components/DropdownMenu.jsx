@@ -23,7 +23,7 @@ export default function DropdownMenu({ page, setPage }) {
   }, [])
 
   const items = [
-    { icon: Home, label: 'Inicio', page: 'feed', path: '/' },
+    { icon: Home, label: 'Inicio', page: 'feed', path: '/feed' },
     { icon: Search, label: 'Explorar', page: 'search', path: '/search' },
     { icon: Bell, label: 'Notificaciones', page: 'notifications', path: '/notifications' },
     { icon: User, label: 'Perfil', page: 'profile' },

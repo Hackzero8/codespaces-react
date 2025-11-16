@@ -3,8 +3,10 @@ import Navbar from './Navbar'
 // Sidebar moved to DropdownMenu in Navbar; keep Sidebar file for reference
 import MobileNav from './MobileNav'
 import Footer from './Footer'
+import { useLocation } from 'react-router-dom'
 
 export default function Layout({ children, page, setPage, user, onLogout }) {
+  const location = useLocation()
   return (
     <div className="min-h-screen flex bg-[rgb(var(--bg))] text-[rgb(var(--text))]">
       {/* Dropdown menu replaces persistent sidebar */}
@@ -17,7 +19,8 @@ export default function Layout({ children, page, setPage, user, onLogout }) {
             {children}
           </div>
         </main>
-        <Footer />
+        {/* Only show footer on landing page */}
+        {location?.pathname === '/' && <Footer />}
       </div>
 
       {/* Mobile nav */}

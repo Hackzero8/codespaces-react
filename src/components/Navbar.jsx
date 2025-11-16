@@ -24,7 +24,7 @@ export default function Navbar({ user, setPage }) {
 
         {/* right - actions */}
         <div className="flex items-center gap-3">
-          <button onClick={() => { setPage('feed'); navigate('/') }} className="hidden md:inline-flex items-center gap-2 px-3 py-2 rounded-full hover:bg-gray-100 dark:hover:bg-twitter-800 transition-colors">
+          <button onClick={() => { setPage('feed'); navigate('/feed') }} className="hidden md:inline-flex items-center gap-2 px-3 py-2 rounded-full hover:bg-gray-100 dark:hover:bg-twitter-800 transition-colors">
             <Home size={18} />
             <span className="hidden xl:inline text-sm font-semibold">Inicio</span>
           </button>
@@ -43,7 +43,7 @@ export default function Navbar({ user, setPage }) {
           </button>
 
           <div className="flex items-center gap-2">
-            <button onClick={() => { setPage('profile'); navigate(`/profile/${user?.id || ''}`) }} className="flex items-center gap-2 px-2 py-1 rounded-full hover:bg-gray-100 dark:hover:bg-twitter-800 transition-colors">
+            <button onClick={() => { if (!user) { navigate('/signup'); return } setPage('profile'); navigate(`/profile/${user.id}`) }} className="flex items-center gap-2 px-2 py-1 rounded-full hover:bg-gray-100 dark:hover:bg-twitter-800 transition-colors">
               <User size={18} />
               <span className="hidden md:inline text-sm">{user?.email ? user.email.split('@')[0] : 'Perfil'}</span>
             </button>

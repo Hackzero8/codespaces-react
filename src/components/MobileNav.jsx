@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Home, Search, Bell, User, Plus, Menu, X, LogOut, Settings, Heart, Bookmark } from 'lucide-react'
+import { Home, Search, Bell, Mail, User, Plus, Menu, X, LogOut, Settings, Heart, Bookmark } from 'lucide-react'
+import { notificationsAPI } from '../api'
 import ThemeToggle from './ThemeToggle'
 import FocusLock from 'react-focus-lock'
 
@@ -21,6 +22,7 @@ export default function MobileNav({ page, setPage, user, onLogout }) {
   ]
 
   const navTo = useNavigate()
+  const [unread, setUnread] = useState(0)
 
   const handleNavClick = (page) => {
     setPage(page)
@@ -39,6 +41,26 @@ export default function MobileNav({ page, setPage, user, onLogout }) {
     } catch (e) {}
     return () => { try { document.body.style.overflow = '' } catch (e) {} }
   }, [isOpen])
+
+  useEffect(() => {
+    let mounted = true
+    async function getUnread() {
+      try {
+        if (!user?.id) {
+          if (mounted) setUnread(0)
+          return
+        }
+        const count = await notificationsAPI.getUnreadCount(user.id)
+        if (mounted) setUnread(count)
+      } catch (err) {
+        console.error('Failed to fetch unread count', err)
+      }
+    }
+    getUnread()
+    const onVisibility = () => { if (!document.hidden) getUnread() }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => { mounted = false; document.removeEventListener('visibilitychange', onVisibility) }
+  }, [user])
 
   return (
     <>
@@ -167,7 +189,7 @@ export default function MobileNav({ page, setPage, user, onLogout }) {
                 ? 'text-twitter-600 dark:text-twitter-400'
                 : 'text-gray-600 dark:text-gray-300 hover:text-twitter-600 dark:hover:text-twitter-400'
             }`}
-            onClick={() => { setPage('feed'); navTo('/') }}
+            onClick={() => { setPage('feed'); navTo('/feed') }}
           >
             <Home size={20} />
             <span className="text-xs mt-1">Inicio</span>
@@ -184,32 +206,46 @@ export default function MobileNav({ page, setPage, user, onLogout }) {
             <Search size={20} />
             <span className="text-xs mt-1">Explorar</span>
           </button>
+              {/* Compose central floating button */}
+              <div className="flex-1 flex justify-center items-center -mt-10">
+                <button onClick={() => { if (!user) { navTo('/signup'); return } setPage('compose'); navTo('/compose') }} className="compose-btn bg-gradient-to-r from-twitter-600 to-blue-600 text-white">
+                  <Plus size={20} />
+                </button>
+              </div>
 
-          {/* Optional compose button removed for a minimal bottom nav */}
+              <button
+                className={`flex-1 flex flex-col items-center justify-center p-2 transition-all duration-200 ${
+                  page === 'notifications'
+                    ? 'text-twitter-600 dark:text-twitter-400'
+                    : 'text-gray-600 dark:text-gray-300 hover:text-twitter-600 dark:hover:text-twitter-400'
+                }`}
+                onClick={() => { setPage('notifications'); navTo('/notifications') }}
+              >
+                <div className="relative">
+                  <Bell size={20} />
+                  {unread > 0 && <span className="nav-badge">{unread > 99 ? '99+' : unread}</span>}
+                </div>
+                <span className="text-xs mt-1">Notifs</span>
+              </button>
 
-            <button
-            className={`flex-1 flex flex-col items-center justify-center p-2 transition-all duration-200 ${
-              page === 'notifications'
-                ? 'text-twitter-600 dark:text-twitter-400'
-                : 'text-gray-600 dark:text-gray-300 hover:text-twitter-600 dark:hover:text-twitter-400'
-            }`}
-            onClick={() => { setPage('notifications'); navTo('/notifications') }}
-          >
-            <Bell size={20} />
-            <span className="text-xs mt-1">Notifs</span>
-            <button
-
-          <button
-            className={`flex-1 flex flex-col items-center justify-center p-2 transition-all duration-200 ${
-              page === 'messages'
-                ? 'text-twitter-600 dark:text-twitter-400'
-            onClick={() => { setPage('profile'); navTo(`/profile/${user?.id || ''}`) }}
-            }`}
-            onClick={() => setPage('profile')}
-          >
-            <User size={20} />
-            <span className="text-xs mt-1">Perfil</span>
-          </button>
+              <button
+                className={`flex-1 flex flex-col items-center justify-center p-2 transition-all duration-200 ${
+                  page === 'profile'
+                    ? 'text-twitter-600 dark:text-twitter-400'
+                    : 'text-gray-600 dark:text-gray-300 hover:text-twitter-600 dark:hover:text-twitter-400'
+                }`}
+                onClick={() => {
+                  if (!user) {
+                    navTo('/signup')
+                    return
+                  }
+                  setPage('profile');
+                  navTo(`/profile/${user?.id}`)
+                }}
+              >
+                <User size={20} />
+                <span className="text-xs mt-1">Perfil</span>
+              </button>
 
           <div className="absolute right-4 top-2">
             <ThemeToggle />

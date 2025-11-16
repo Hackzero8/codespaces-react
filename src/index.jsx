@@ -4,16 +4,19 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 import ErrorOverlay from './components/ErrorOverlay'
+import { ToastProvider } from './components/ToastProvider'
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 
 function Root() {
   return (
     <React.StrictMode>
-      <ErrorOverlay>
-        <App />
-      </ErrorOverlay>
-    </React.StrictMode>
+        <ErrorOverlay>
+          <ToastProvider>
+            <App />
+          </ToastProvider>
+        </ErrorOverlay>
+      </React.StrictMode>
   )
 }
 
