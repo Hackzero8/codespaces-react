@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import supabase from '../supabase'
 import { MessageCircle, Repeat, Heart, Share2 } from 'lucide-react'
+import Post from './Post'
 
 export default function Timeline({ onOpenProfile }) {
   const [posts, setPosts] = useState([])
@@ -8,15 +9,35 @@ export default function Timeline({ onOpenProfile }) {
 
   const fetchPosts = async () => {
     setLoading(true)
-    const { data, error } = await supabase
-      .from('posts')
-      .select('id, content, created_at, author_id, profiles(username, avatar_url)')
-      .order('created_at', { ascending: false })
+    // Try to get user id for timeline personalization
+    const {
+      data: { user }
+    } = await supabase.auth.getUser()
+
+    const { data, error } = user
+      ? await supabase.rpc('get_timeline_feed', { p_user_id: user.id, p_limit: 20, p_offset: 0 })
+      : await supabase
+          .from('posts')
+          .select('id, content, created_at, author_id, profiles(username, avatar_url), likes_count')
+          .order('created_at', { ascending: false })
 
     setLoading(false)
 
     if (error) return console.error(error)
-    setPosts(data || [])
+
+    // Map to a unified object structure consumed by <Post>
+    const mapped = (data || []).map((p) => ({
+      ...p,
+      author: {
+        id: p.author_id || p.author_id,
+        username: p.author_username || p.profiles?.username,
+        avatar_url: p.author_avatar || p.profiles?.avatar_url,
+      },
+      likes_count: p.likes_count || p.likes_count || 0,
+      liked_by_user: p.liked_by_user || false
+    }))
+
+    setPosts(mapped)
   }
 
   // Helper function to format time
@@ -89,56 +110,14 @@ export default function Timeline({ onOpenProfile }) {
         )}
 
         {posts.map((p, idx) => (
-          <div
-            key={p.id}
-            className="tweet-card border-0 rounded-none p-4 hover:bg-gray-50 dark:hover:bg-twitter-800 cursor-pointer transition-colors duration-150 animate-fade-in"
-            style={{ animationDelay: `${idx * 50}ms` }}
-          >
-            <div>
-              {/* User info */}
-              <div className="flex gap-3 mb-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-twitter-400 to-twitter-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-                  {(p.profiles?.username || p.author_id)?.[0]?.toUpperCase() ?? '?'}
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-baseline gap-2">
-                      <strong onClick={() => onOpenProfile && onOpenProfile(p.author_id)} className="text-gray-900 dark:text-white font-bold hover:underline cursor-pointer">
-                        {p.profiles?.username || 'Usuario'}
-                    </strong>
-                    <span className="text-gray-500 dark:text-gray-600 text-sm">
-                      @{(p.profiles?.username || 'user').toLowerCase().replace(/[^a-z0-9]/g, '')}
-                    </span>
-                    <span className="text-gray-500 dark:text-gray-600 text-sm">
-                      · {formatTime(p.created_at)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Post content */}
-              <p className="text-gray-900 dark:text-white text-base leading-6 mb-3 whitespace-pre-wrap break-words">
-                {p.content}
-              </p>
-
-              {/* Interaction buttons */}
-              <div className="flex justify-between text-gray-500 dark:text-gray-600 max-w-xs text-sm mt-3 pt-3 border-t border-gray-100 dark:border-twitter-800">
-                <button className="hover:text-twitter-600 hover:bg-twitter-50 dark:hover:bg-twitter-900 rounded-full px-3 py-2 transition-colors duration-150 group flex items-center gap-2">
-                  <MessageCircle size={16} />
-                  <span className="group-hover:text-twitter-600 text-xs">0</span>
-                </button>
-                <button className="hover:text-twitter-600 hover:bg-twitter-50 dark:hover:bg-twitter-900 rounded-full px-3 py-2 transition-colors duration-150 group flex items-center gap-2">
-                  <Repeat size={16} />
-                  <span className="group-hover:text-twitter-600 text-xs">0</span>
-                </button>
-                <button className="hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900 dark:hover:bg-opacity-20 rounded-full px-3 py-2 transition-colors duration-150 group flex items-center gap-2">
-                  <Heart size={16} />
-                  <span className="group-hover:text-red-600 text-xs">0</span>
-                </button>
-                <button className="hover:text-twitter-600 hover:bg-twitter-50 dark:hover:bg-twitter-900 rounded-full px-3 py-2 transition-colors duration-150">
-                  <Share2 size={16} />
-                </button>
-              </div>
-            </div>
+          <div key={p.id} style={{ animationDelay: `${idx * 50}ms` }} className="animate-fade-in">
+            <Post post={{
+              ...p,
+              author: {
+                username: p.profiles?.username,
+                avatar_url: p.profiles?.avatar_url
+              }
+            }} onOpenProfile={() => onOpenProfile && onOpenProfile(p.author_id)} />
           </div>
         ))}
       </div>

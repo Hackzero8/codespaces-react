@@ -3,15 +3,36 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
+import ErrorOverlay from './components/ErrorOverlay'
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
 
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
+function Root() {
+  return (
+    <React.StrictMode>
+      <ErrorOverlay>
+        <App />
+      </ErrorOverlay>
+    </React.StrictMode>
+  )
+}
+
+root.render(<Root />);
+
+// Global handlers to surface uncaught errors and promise rejections inside the overlay
+// We attach them to window and forward to the overlay by dispatching a custom event.
+window.addEventListener('error', (ev) => {
+  try {
+    const overlay = document.querySelector('#root')?.__error_overlay_instance
+    // if overlay instance not found, just log
+    console.error('Global error:', ev.error || ev.message, ev)
+  } catch (e) {
+    console.error(e)
+  }
+})
+
+window.addEventListener('unhandledrejection', (ev) => {
+  console.error('Unhandled promise rejection:', ev.reason)
+})
+
 reportWebVitals();
